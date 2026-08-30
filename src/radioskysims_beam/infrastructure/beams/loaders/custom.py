@@ -29,7 +29,8 @@ class CustomBeamLoader(BeamLoader):
     def load(self) -> Beam:
         spec = importlib.util.spec_from_file_location("custom_beam", self.path)
         if spec is None or spec.loader is None:
-            raise ImportError(f"Cannot load module from path: {self.path}")
+            msg = f"Cannot load module from path: {self.path}"
+            raise ImportError(msg)
         module: Any = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 

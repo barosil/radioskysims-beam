@@ -60,27 +60,28 @@ class BeamFactory:
         Beam
             Objeto feixe instanciado.
         """
+        _ = name  # mantido para compatibilidade (ignorado)
         if not os.path.exists(filepath):
-            raise FileNotFoundError(f"Arquivo não encontrado: {filepath}")
+            msg = f"Arquivo não encontrado: {filepath}"
+            raise FileNotFoundError(msg)
 
         try:
             data = np.loadtxt(filepath)
-        except Exception:
-            raise ValueError(
-                "Erro ao ler arquivo. Verifique o formato (3 colunas: freq, ângulo, intensidade)."
-            )
+        except Exception as e:
+            msg = "Erro ao ler arquivo. Verifique o formato (3 colunas: freq, ângulo, intensidade)."
+            raise ValueError(msg) from e
 
         if data.shape[1] != 3:
-            raise ValueError(
-                "Arquivo deve conter exatamente 3 colunas: Frequência, Ângulo, Intensidade"
-            )
+            msg = "Arquivo deve conter exatamente 3 colunas: Frequência, Ângulo, Intensidade"
+            raise ValueError(msg)
 
         if is_db:
             data[:, 2] = 10 ** (data[:, 2] / 10)
 
         unique_freqs = np.unique(data[:, 0])
         if len(unique_freqs) > 1:
-            raise ValueError("Atualmente, apenas uma frequência é suportada por feixe.")
+            msg = "Atualmente, apenas uma frequência é suportada por feixe."
+            raise ValueError(msg)
 
         freq = unique_freqs[0]
 
@@ -137,6 +138,7 @@ class BeamFactory:
         Beam
             Objeto Beam instanciado.
         """
+        _ = name  # mantido para compatibilidade (ignorado)
         loader = AnalyticalBeamLoader(
             beam_profile=beam_type,
             frequency=frequency,

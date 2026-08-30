@@ -30,8 +30,8 @@ class BeamProperties:
         Retorna um novo Dataset com as métricas calculadas.
         """
         try:
-            num_pols = len(ds.polarization.values)
-            num_freqs = len(ds.frequency.values)
+            len(ds.polarization.values)
+            len(ds.frequency.values)
 
             angles = ds.angle.values
             dtheta = np.gradient(np.deg2rad(angles))
@@ -100,7 +100,7 @@ class BeamProperties:
                 directivity_db.append(f_ddb)
                 main_lobe_efficiency.append(f_eff)
 
-            coords = dict(polarization=ds.polarization.values, frequency=ds.frequency.values)
+            coords = {"polarization": ds.polarization.values, "frequency": ds.frequency.values}
 
             result = xr.Dataset(
                 {

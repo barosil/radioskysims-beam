@@ -11,10 +11,12 @@ def finalize_beam_dataset(ds: xr.Dataset) -> xr.Dataset:
 
     required_dims = {"polarization", "frequency", "angle"}
     if not required_dims.issubset(ds.dims):
-        raise ValueError(f"Dataset inválido, dims={ds.dims}")
+        msg = f"Dataset inválido, dims={ds.dims}"
+        raise ValueError(msg)
 
     if "amplitude" not in ds:
-        raise ValueError("Dataset não contém 'amplitude'")
+        msg = "Dataset não contém 'amplitude'"
+        raise ValueError(msg)
 
     ds = ds.copy()
 

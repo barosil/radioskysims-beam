@@ -49,16 +49,20 @@ def gaussian_beam_dataset(
             Se os parâmetros numéricos forem inválidos.
     """
     if frequency_hz <= 0:
-        raise ValueError("frequency_hz deve ser maior que zero.")
+        msg = "frequency_hz deve ser maior que zero."
+        raise ValueError(msg)
 
     if width_deg <= 0:
-        raise ValueError("width_deg deve ser maior que zero.")
+        msg = "width_deg deve ser maior que zero."
+        raise ValueError(msg)
 
     if amplitude < 0:
-        raise ValueError("amplitude não pode ser negativa.")
+        msg = "amplitude não pode ser negativa."
+        raise ValueError(msg)
 
     if n_points < 3:
-        raise ValueError("n_points deve ser maior ou igual a 3.")
+        msg = "n_points deve ser maior ou igual a 3."
+        raise ValueError(msg)
 
     angle_deg = np.linspace(-90.0, 90.0, n_points, dtype=float)
 

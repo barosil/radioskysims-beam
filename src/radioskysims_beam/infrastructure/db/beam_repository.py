@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import logging
 
+from radioskysims_core.domain.common.exceptions import BeamRepositoryError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
 from radioskysims_beam.domain.beam.models import BeamParamsDomain
-from radioskysims_core.domain.common.exceptions import BeamRepositoryError
 from radioskysims_beam.infrastructure.db.beam_db_model import BeamParamsDB
 
 # Configuração de logger
@@ -37,30 +37,28 @@ class BeamRepository:
     # ----------------------------------------------------------
     # CREATE
     # ----------------------------------------------------------
-    def add_beam_params(
-        self, params: BeamParamsDB | BeamParamsDomain | object
-    ) -> BeamParamsDB:
+    def add_beam_params(self, params: BeamParamsDB | BeamParamsDomain | object) -> BeamParamsDB:
         """
         Adiciona um novo BeamParams no banco.
         Aceita tanto um objeto de domínio quanto um SQLModel.
         """
         try:
             if not isinstance(params, BeamParamsDB):
-                logger.info(
-                    "Convertendo objeto de domínio para modelo persistente BeamParamsDB"
-                )
+                logger.info("Convertendo objeto de domínio para modelo persistente BeamParamsDB")
                 params = BeamParamsDB.from_domain(params)
 
             self.session.add(params)
             self.session.commit()
             self.session.refresh(params)
-            logger.info(f"BeamParams salvo com sucesso (id={params.id})")
+            log_msg = f"BeamParams salvo com sucesso (id={params.id})"
+            logger.info(log_msg)
             return params
 
         except SQLAlchemyError as e:
             self.session.rollback()
             logger.exception("Erro ao salvar BeamParams no banco.")
-            raise BeamRepositoryError(f"Erro ao adicionar BeamParams: {e}")
+            msg = f"Erro ao adicionar BeamParams: {e}"
+            raise BeamRepositoryError(msg) from e
 
     # ----------------------------------------------------------
     # READ
@@ -71,24 +69,29 @@ class BeamRepository:
             statement = select(BeamParamsDB).where(BeamParamsDB.id == beam_id)
             result = self.session.exec(statement).first()
             if result:
-                logger.info(f"BeamParams encontrado (id={beam_id})")
+                log_msg = f"BeamParams encontrado (id={beam_id})"
+                logger.info(log_msg)
             else:
-                logger.warning(f"Nenhum BeamParams encontrado (id={beam_id})")
+                log_msg = f"Nenhum BeamParams encontrado (id={beam_id})"
+                logger.warning(log_msg)
             return result
         except SQLAlchemyError as e:
             logger.exception("Erro ao buscar BeamParams por ID.")
-            raise BeamRepositoryError(f"Erro ao buscar BeamParams {beam_id}: {e}")
+            msg = f"Erro ao buscar BeamParams {beam_id}: {e}"
+            raise BeamRepositoryError(msg) from e
 
     def list_all(self) -> list[BeamParamsDB]:
         """Retorna todos os BeamParams do banco (objetos SQLModel)."""
         try:
             statement = select(BeamParamsDB)
             results = list(self.session.exec(statement).all())
-            logger.info(f"{len(results)} BeamParams encontrados no banco.")
+            log_msg = f"{len(results)} BeamParams encontrados no banco."
+            logger.info(log_msg)
             return results
         except SQLAlchemyError as e:
             logger.exception("Erro ao listar BeamParams.")
-            raise BeamRepositoryError(f"Erro ao listar BeamParams: {e}")
+            msg = f"Erro ao listar BeamParams: {e}"
+            raise BeamRepositoryError(msg) from e
 
     # ----------------------------------------------------------
     # UPDATE
@@ -105,9 +108,8 @@ class BeamRepository:
         try:
             existing = self.get_beam_params_by_id(beam_id)
             if not existing:
-                logger.warning(
-                    f"Tentativa de atualizar BeamParams inexistente (id={beam_id})"
-                )
+                log_msg = f"Tentativa de atualizar BeamParams inexistente (id={beam_id})"
+                logger.warning(log_msg)
                 return None
 
             if not isinstance(new_params, BeamParamsDB):
@@ -119,13 +121,15 @@ class BeamRepository:
             self.session.add(existing)
             self.session.commit()
             self.session.refresh(existing)
-            logger.info(f"BeamParams atualizado com sucesso (id={beam_id})")
+            log_msg = f"BeamParams atualizado com sucesso (id={beam_id})"
+            logger.info(log_msg)
             return existing
 
         except SQLAlchemyError as e:
             self.session.rollback()
             logger.exception("Erro ao atualizar BeamParams.")
-            raise BeamRepositoryError(f"Erro ao atualizar BeamParams {beam_id}: {e}")
+            msg = f"Erro ao atualizar BeamParams {beam_id}: {e}"
+            raise BeamRepositoryError(msg) from e
 
     # ----------------------------------------------------------
     # DELETE
@@ -135,20 +139,21 @@ class BeamRepository:
         try:
             existing = self.get_beam_params_by_id(beam_id)
             if not existing:
-                logger.warning(
-                    f"Tentativa de deletar BeamParams inexistente (id={beam_id})"
-                )
+                log_msg = f"Tentativa de deletar BeamParams inexistente (id={beam_id})"
+                logger.warning(log_msg)
                 return False
 
             self.session.delete(existing)
             self.session.commit()
-            logger.info(f"BeamParams removido com sucesso (id={beam_id})")
+            log_msg = f"BeamParams removido com sucesso (id={beam_id})"
+            logger.info(log_msg)
             return True
 
         except SQLAlchemyError as e:
             self.session.rollback()
             logger.exception("Erro ao deletar BeamParams.")
-            raise BeamRepositoryError(f"Erro ao deletar BeamParams {beam_id}: {e}")
+            msg = f"Erro ao deletar BeamParams {beam_id}: {e}"
+            raise BeamRepositoryError(msg) from e
 
     # ----------------------------------------------------------
     # DOMAIN HELPERS
@@ -159,19 +164,18 @@ class BeamRepository:
         """
         db_obj = self.get_beam_params_by_id(beam_id)
         if not db_obj:
-            logger.warning(
-                f"Tentativa de converter BeamParams inexistente (id={beam_id}) para domínio"
-            )
+            log_msg = f"Tentativa de converter BeamParams inexistente (id={beam_id}) para domínio"
+            logger.warning(log_msg)
             return None
         try:
             domain_obj = db_obj.to_domain()
-            logger.info(f"BeamParams convertido para domínio (id={beam_id})")
+            log_msg = f"BeamParams convertido para domínio (id={beam_id})"
+            logger.info(log_msg)
             return domain_obj
         except Exception as e:
             logger.exception("Erro ao converter BeamParams para domínio.")
-            raise BeamRepositoryError(
-                f"Erro ao converter BeamParams {beam_id} para domínio: {e}"
-            )
+            msg = f"Erro ao converter BeamParams {beam_id} para domínio: {e}"
+            raise BeamRepositoryError(msg) from e
 
     def list_all_as_domain(self) -> list[BeamParamsDomain]:
         """
@@ -179,8 +183,10 @@ class BeamRepository:
         """
         try:
             results = [b.to_domain() for b in self.list_all()]
-            logger.info(f"{len(results)} BeamParams convertidos para domínio.")
+            log_msg = f"{len(results)} BeamParams convertidos para domínio."
+            logger.info(log_msg)
             return results
         except Exception as e:
             logger.exception("Erro ao converter lista de BeamParams para domínio.")
-            raise BeamRepositoryError(f"Erro ao converter BeamParams para domínio: {e}")
+            msg = f"Erro ao converter BeamParams para domínio: {e}"
+            raise BeamRepositoryError(msg) from e
