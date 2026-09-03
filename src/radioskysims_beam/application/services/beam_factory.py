@@ -1,15 +1,17 @@
 """
-Módulo: src/radioskysims/beam/factory.py
+Módulo: src/radioskysims/application/services/beam_factory.py
 
 Descrição:
     Fábrica de feixes LEGADO. Mantida para compatibilidade com código
     existente. Delega a geração de feixes analíticos para o novo
     AnalyticalBeamLoader em infrastructure/beams/loaders/.
 
-    Novos desenvolvimentos devem usar AnalyticalBeamLoader diretamente.
+    Movido de domain/beam/factory.py (E2): este serviço depende de um loader
+    concreto de infraestrutura e não pertence ao domínio. Novos desenvolvimentos
+    devem usar AnalyticalBeamLoader diretamente.
 
 Copyright BINGO Collaboration
-Last modified: 2026-07-26
+Last modified: 2026-09-03
 """
 
 from __future__ import annotations
