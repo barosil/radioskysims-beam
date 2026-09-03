@@ -20,7 +20,6 @@ import os
 
 import numpy as np
 import xarray as xr
-
 from radioskysims_beam.domain.beam.models import Beam
 from radioskysims_beam.infrastructure.beams.loaders.analytical import (
     AnalyticalBeamLoader,
