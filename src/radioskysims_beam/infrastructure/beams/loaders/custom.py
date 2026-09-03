@@ -34,9 +34,7 @@ class CustomBeamLoader(BeamLoader):
         module: Any = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
-        amp = np.zeros(
-            (len(self.polarizations), len(self.frequencies), len(self.angles))
-        )
+        amp = np.zeros((len(self.polarizations), len(self.frequencies), len(self.angles)))
         phase = np.zeros_like(amp)
 
         for i, pol in enumerate(self.polarizations):

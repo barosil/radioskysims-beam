@@ -160,16 +160,11 @@ class Beam:
                 # Compatibilidade retroativa para DataArrays sem metadados:
                 # valores dentro de aproximadamente +/- 2*pi são tratados
                 # como radianos; intervalos maiores, como graus.
-                arg_looks_radians = (
-                    abs(arg_min) <= 7.0
-                    and abs(arg_max) <= 7.0
-                )
+                arg_looks_radians = abs(arg_min) <= 7.0 and abs(arg_max) <= 7.0
                 arg_is_degrees = not arg_looks_radians
 
             if ds_is_degrees and not arg_is_degrees:
-                factor = angle.dtype.type(
-                    180.0 / np.pi
-                )
+                factor = angle.dtype.type(180.0 / np.pi)
                 angle = angle * factor
                 angle = angle.assign_attrs(
                     {
@@ -179,9 +174,7 @@ class Beam:
                 )
 
             elif not ds_is_degrees and arg_is_degrees:
-                factor = angle.dtype.type(
-                    np.pi / 180.0
-                )
+                factor = angle.dtype.type(np.pi / 180.0)
                 angle = angle * factor
                 angle = angle.assign_attrs(
                     {

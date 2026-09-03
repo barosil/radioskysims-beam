@@ -1,4 +1,3 @@
-
 """
 Módulo: src/radioskysims/infrastructure/beams/loaders/base.py
 
@@ -37,4 +36,3 @@ class BeamLoader(BeamLoaderPort, ABC):
                 por uma subclasse concreta.
         """
         raise NotImplementedError
-
