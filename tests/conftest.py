@@ -12,7 +12,7 @@ import warnings
 import pytest
 
 
-def pytest_configure(config):
+def pytest_configure(config):  # noqa: ARG001
     # Recursos não fechados de libs de terceiros (Skyfield .bsp, openpyxl,
     # sqlite3) geram ResourceWarning no __del__ — promovidos a erro por
     # filterwarnings=error.
