@@ -542,3 +542,26 @@ def test_evaluate_single_frequency_beam_preserves_matching_frequency_in_mixed_re
         rtol=0.0,
         atol=0.0,
     )
+
+
+def test_normalize_peak_zero_db_per_frequency_and_cross_pol_reference():
+    angles = np.linspace(-90, 90, 181)
+    main = np.exp(-0.5 * (angles / 10.0) ** 2)
+    amp = np.zeros((181, 2, 2))
+    amp[:, 0, 0] = 0.5 * main  # H_COPOL, f0
+    amp[:, 1, 0] = 0.8 * main  # H_COPOL, f1
+    amp[:, 0, 1] = 0.005 * main  # H_CROSS, f0
+    amp[:, 1, 1] = 0.008 * main  # H_CROSS, f1
+    ds = xr.Dataset(
+        {"amplitude": (("angle", "frequency", "polarization"), amp)},
+        coords={
+            "angle": angles,
+            "frequency": [1000.0, 1100.0],
+            "polarization": ["H_COPOL", "H_CROSS"],
+        },
+    )
+    out = BeamOperation.normalize(Beam(ds)).dataset["amplitude"]
+    co = out.sel(polarization="H_COPOL")
+    cross = out.sel(polarization="H_CROSS")
+    np.testing.assert_allclose(co.max("angle"), 1.0)
+    np.testing.assert_allclose(cross.max("angle"), 0.01)

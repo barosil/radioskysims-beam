@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import numpy as np
+import xarray as xr
+from radioskysims_core.logging_config import get_logger
 
 from radioskysims_beam.domain.beam.models import Beam
-from radioskysims_core.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -20,11 +21,47 @@ class BeamOperation:
     """
 
     @staticmethod
+    def _peak_reference(amp: xr.DataArray) -> xr.DataArray:
+        """Pico (potência) de referência por frequência/polarização.
+
+        O pico é buscado só ao longo de ``angle``. Canais ``*_CROSS`` usam o pico
+        do co-pol correspondente (``H_CROSS`` -> ``H_COPOL``), preservando o
+        nível relativo da polarização cruzada.
+        """
+        peak = amp.max("angle")
+        if "polarization" not in amp.dims:
+            return peak
+
+        pols = [str(p) for p in amp["polarization"].values]
+        ref = []
+        for i, pol in enumerate(pols):
+            upper = pol.upper()
+            own = peak.isel(polarization=i, drop=True)
+            if upper.endswith("CROSS"):
+                co = upper[: -len("CROSS")] + "COPOL"
+                match = [j for j, p in enumerate(pols) if p.upper() == co]
+                if match:
+                    own = peak.isel(polarization=match[0], drop=True)
+            ref.append(own)
+        return xr.concat(ref, dim=amp["polarization"])
+
+    @staticmethod
     def normalize(beam: Beam) -> Beam:
+        """Normaliza o padrão de potência para pico de 0 dB (Kraus).
+
+        ``P_n = P / P_max`` por frequência e polarização; em dB equivale a uma
+        translação, ``P_n[dB] = P[dB] - P_max[dB]``. A amplitude é potência.
+        """
         try:
             logger.info("beam_normalize_start", beam_dims=dict(beam.dataset.sizes))
             ds = beam.dataset.copy()
-            ds["amplitude"] /= ds["amplitude"].max()
+            amp = ds["amplitude"]
+            if "angle" in amp.dims:
+                ref = BeamOperation._peak_reference(amp)
+                ref = ref.where(ref > 0)
+                ds["amplitude"] = (amp / ref).fillna(0.0).transpose(*amp.dims)
+            else:
+                ds["amplitude"] = amp / amp.max()
             logger.info("beam_normalize_success")
             return Beam(ds)
         except Exception as e:

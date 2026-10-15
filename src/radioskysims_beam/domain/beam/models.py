@@ -87,6 +87,7 @@ class BeamParamsDomain(BaseModel):
     main_lobe_directivity: float
     main_lobe_efficiency: float
     directivity_db: float
+    omega: float | None = None
 
 
 class Beam:
@@ -309,4 +310,5 @@ class Beam:
             main_lobe_directivity=float(np.nanmean(ds_props["main_lobe_directivity"].values)),
             directivity_db=float(np.nanmean(ds_props["directivity_db"].values)),
             main_lobe_efficiency=float(np.nanmean(ds_props["main_lobe_efficiency"].values)),
+            omega=(float(np.nanmean(ds_props["omega"].values)) if "omega" in ds_props else None),
         )

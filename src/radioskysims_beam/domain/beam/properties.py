@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 import xarray as xr
+from radioskysims_core.domain.common.beam_geometry import solid_angle
 
 from .models import Beam
 
@@ -34,16 +35,16 @@ class BeamProperties:
             len(ds.frequency.values)
 
             angles = ds.angle.values
-            dtheta = np.gradient(np.deg2rad(angles))
 
             fwhm = []
             directivity = []
+            omega = []
             main_lobe_directivity = []
             directivity_db = []
             main_lobe_efficiency = []
 
             for pol in ds.polarization.values:
-                f_fwhm, f_d, f_md, f_ddb, f_eff = [], [], [], [], []
+                f_fwhm, f_d, f_om, f_md, f_ddb, f_eff = [], [], [], [], [], []
                 for f in ds.frequency.values:
                     response = ds.sel(
                         polarization=pol,
@@ -71,23 +72,26 @@ class BeamProperties:
 
                     f_fwhm.append(width)
 
-                    # --- Diretividade ---
-                    integral = np.sum(response * dtheta)
-                    d = (2 * np.pi * p_max) / integral if integral > 0 else np.nan
+                    # --- Ângulo sólido e diretividade ---
+                    # Ω = 2π ∫ B_n(θ) sinθ dθ (potência normalizada ao pico,
+                    # padrão dobrado por simetria); D = 4π/Ω (Kraus).
+                    om = solid_angle(response / p_max, angles) if p_max > 0 else np.nan
+                    d = 4 * np.pi / om if om and om > 0 else np.nan
+                    f_om.append(om)
                     f_d.append(d)
                     f_ddb.append(10 * np.log10(d) if d > 0 else np.nan)
 
                     # --- Main lobe ---
-                    if not np.isnan(width):
+                    if not np.isnan(width) and p_max > 0:
                         theta_max = angles[np.argmax(response)]
                         mask = (angles >= theta_max - width / 2) & (angles <= theta_max + width / 2)
-                        integral_main = np.sum(response[mask] * dtheta[mask])
+                        om_main = solid_angle(np.where(mask, response, 0.0) / p_max, angles)
                     else:
-                        integral_main = np.nan
+                        om_main = np.nan
 
-                    if integral_main and integral_main > 0:
-                        d_main = (2 * np.pi * p_max) / integral_main
-                        eff = integral_main / integral
+                    if om_main and om_main > 0:
+                        d_main = 4 * np.pi / om_main
+                        eff = om_main / om
                     else:
                         d_main, eff = np.nan, np.nan
 
@@ -96,6 +100,7 @@ class BeamProperties:
 
                 fwhm.append(f_fwhm)
                 directivity.append(f_d)
+                omega.append(f_om)
                 main_lobe_directivity.append(f_md)
                 directivity_db.append(f_ddb)
                 main_lobe_efficiency.append(f_eff)
@@ -105,6 +110,7 @@ class BeamProperties:
             result = xr.Dataset(
                 {
                     "fwhm": (coords.keys(), np.array(fwhm)),
+                    "omega": (coords.keys(), np.array(omega)),
                     "directivity": (coords.keys(), np.array(directivity)),
                     "main_lobe_directivity": (
                         coords.keys(),
@@ -137,11 +143,11 @@ class BeamProperties:
                 - directivity_db: Diretividade em decibéis
 
         Notes:
-            A diretividade é calculada como D = (2π * Pmax) / ∫P(θ)dθ
+            A diretividade é calculada como D = 4π/Ω, com
+            Ω = 2π ∫ B_n(θ) sinθ dθ (padrão dobrado por simetria).
         """
         ds = beam.dataset
-        angles = np.deg2rad(ds.angle.values)
-        dtheta = np.gradient(angles)
+        angles_deg = ds.angle.values
 
         def _compute_one(power):
             pmax = power.max()
@@ -155,9 +161,12 @@ class BeamProperties:
             k_right = k_peak
             while k_right < len(power) - 1 and power[k_right + 1] >= half:
                 k_right += 1
-            fwhm = ds.angle[k_right] - ds.angle[k_left] if k_right > k_left else np.nan
-            integral = np.sum(power * dtheta)
-            d = (2 * np.pi * pmax) / integral if integral > 0 else np.nan
+            fwhm = angles_deg[k_right] - angles_deg[k_left] if k_right > k_left else np.nan
+            if pmax > 0:
+                om = solid_angle(power / pmax, angles_deg)
+                d = 4 * np.pi / om if om > 0 else np.nan
+            else:
+                d = np.nan
             return fwhm, d, 10 * np.log10(d) if d > 0 else np.nan
 
         fwhm, directivity, directivity_db = xr.apply_ufunc(
