@@ -421,7 +421,6 @@ def test_evaluate_single_frequency_beam_returns_finite_values() -> None:
     )
 
 
-
 def test_evaluate_single_frequency_beam_preserves_matching_frequency_in_mixed_request() -> None:
     angle_grid = np.linspace(-2.0, 2.0, 801)
     frequency_grid = np.array([1.0e9])
@@ -429,14 +428,7 @@ def test_evaluate_single_frequency_beam_preserves_matching_frequency_in_mixed_re
 
     sigma_deg = 0.25
 
-    amplitude = np.exp(
-        -0.5
-        * (
-            angle_grid[:, None, None]
-            / sigma_deg
-        )
-        ** 2
-    )
+    amplitude = np.exp(-0.5 * (angle_grid[:, None, None] / sigma_deg) ** 2)
 
     ds = xr.Dataset(
         data_vars={
@@ -514,30 +506,19 @@ def test_evaluate_single_frequency_beam_preserves_matching_frequency_in_mixed_re
     expected_matching = np.array(
         [
             1.0,
-            np.exp(
-                -0.5
-                * (
-                    0.1
-                    / sigma_deg
-                )
-                ** 2
-            ),
+            np.exp(-0.5 * (0.1 / sigma_deg) ** 2),
         ]
     )
 
     np.testing.assert_allclose(
-        result.isel(
-            frequency=0
-        ).values,
+        result.isel(frequency=0).values,
         expected_matching,
         rtol=1e-6,
         atol=1e-12,
     )
 
     np.testing.assert_allclose(
-        result.isel(
-            frequency=1
-        ).values,
+        result.isel(frequency=1).values,
         0.0,
         rtol=0.0,
         atol=0.0,

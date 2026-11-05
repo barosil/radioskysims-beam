@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import numpy as np
@@ -80,10 +79,14 @@ def test_gaussian_beam_is_symmetric() -> None:
         amplitude=1.0,
     )
 
-    amplitude = beam.dataset["amplitude"].isel(
-        polarization=0,
-        frequency=0,
-    ).values
+    amplitude = (
+        beam.dataset["amplitude"]
+        .isel(
+            polarization=0,
+            frequency=0,
+        )
+        .values
+    )
 
     assert np.allclose(amplitude, amplitude[::-1])
 

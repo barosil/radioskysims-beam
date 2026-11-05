@@ -47,9 +47,7 @@ def phase(pol, freq, angle):
     # Verifica conteúdo conhecido
     assert np.all(
         ds["amplitude"].values
-        == np.array(
-            [[[10, 10, 10], [20, 20, 20]], [[10, 10, 10], [20, 20, 20]]], dtype=float
-        )
+        == np.array([[[10, 10, 10], [20, 20, 20]], [[10, 10, 10], [20, 20, 20]]], dtype=float)
     )
     assert np.isclose(ds["phase"].values[0, 0, 1], 0.45)  # angle 45 * 0.01
 
