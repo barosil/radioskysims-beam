@@ -35,4 +35,3 @@ class BeamLoaderPort(ABC):
             ValueError: Se formato inválido.
         """
         raise NotImplementedError
-
